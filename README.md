@@ -7,7 +7,7 @@ This module creates a graph based on chat data exported from Telegram. The graph
 {
  "about": "",
  "chats": {
-  "about": "Здесь перечислены чаты, которые Вы экспортировали.",
+  "about": "",
   "list": [
    {
     "name": "Person",
