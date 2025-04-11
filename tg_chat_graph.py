@@ -1,41 +1,46 @@
-import json
-from collections import Counter
-import pandas as pd
-import matplotlib.pyplot as plt
-from pandas import DataFrame
+import os
+import argparse
+import logging
+import utils
 
-def create_diagram():
-	file_path = 'D:/Study/Telegram History Chat Export/json 2/chat_history.json'
-	with open(file_path, encoding='utf-8') as data_file:
-	    data = json.load(data_file)
+logger = logging.getLogger(__name__)
 
-	day_arr = []
-	messages_amount_arr = []
 
-	j = 0
-	k = 0
-	messages_arr = data["chats"]["list"][0]["messages"]
-	amount_of_messages = len(data["chats"]["list"][0]["messages"])
-	unique_days = 0
-	for i in range(amount_of_messages - 1):
-	    if (messages_arr[i]["date"][0:10] != messages_arr[i + 1]["date"][0:10]):
-	        unique_days += 1
-	date_arr = []
+def create_diagram(file_path: str, output_dir: str):
+    """Main function to load, analyze, and output diagram and Excel data."""
+    logger.info("Reading input data...")
+    messages = utils.load_chat_data(file_path)
+    dates = utils.extract_dates(messages)
+    daily_counts = utils.count_messages_per_day(dates)
 
-	for message in messages_arr:
-	    date_arr.append(message["date"][0:10])
+    os.makedirs(output_dir, exist_ok=True)
 
-	c = Counter(date_arr)
-	df = pd.DataFrame.from_dict(c, orient='index').reset_index()
-	plt.rcParams['figure.figsize'] = [800, 100]
-	plt.bar(c.keys(), c.values())
-	plt.savefig("graphic.png")
+    plot_path = os.path.join(output_dir, "plot.png")
+    excel_path = os.path.join(output_dir, "output.xlsx")
 
-	df.to_excel("D:/Study/Telegram History Chat Export/output.xlsx")
+    utils.save_plot(daily_counts, plot_path)
+    utils.save_to_excel(daily_counts, excel_path)
+
+    logger.info(f"Diagram saved to: {plot_path}")
+    logger.info(f"Excel file saved to: {excel_path}")
+
+
+def parse_arguments():
+    """Set up CLI argument parsing."""
+    parser = argparse.ArgumentParser(
+        description="Generate a daily message count diagram and Excel report from Telegram JSON export."
+    )
+    parser.add_argument(
+        "-i", "--input", required=True,
+        help="Path to the Telegram chat JSON file"
+    )
+    parser.add_argument(
+        "-o", "--output", default=".",
+        help="Directory to save output files (default: current directory)"
+    )
+    return parser.parse_args()
+
 
 if __name__ == "__main__":
-	create_diagram()
-
-
-
-
+    args = parse_arguments()
+    create_diagram(args.input, args.output)
